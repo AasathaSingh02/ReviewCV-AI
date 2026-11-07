@@ -1,0 +1,26 @@
+{
+  "name": "reviewcv-ai",
+  "version": "1.0.0",
+  "description": "ReviewCV AI - AI-powered Resume Analyzer & ATS Optimizer (MERN Stack)",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install --prefix client && npm install --prefix server",
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server",
+    "client:build": "npm run build --prefix client",
+    "client:preview": "npm run preview --prefix client",
+    "server:start": "npm start --prefix server"
+  },
+  "keywords": [
+    "resume",
+    "ats",
+    "ai",
+    "mern",
+    "react",
+    "nodejs",
+    "openrouter",
+    "gemini"
+  ],
+  "license": "MIT"
+}
+
