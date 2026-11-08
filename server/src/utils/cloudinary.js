@@ -18,9 +18,19 @@ export const uploadToCloudinary = async (filePath) => {
     Boolean(process.env.CLOUDINARY_KEY) && 
     Boolean(process.env.CLOUDINARY_SECRET);
 
-  const port = process.env.PORT || 5000;
-  const backendUrl = process.env.BACKEND_URL || `http://localhost:${port}`;
   const filename = path.basename(filePath);
+
+  // Determine the public URL of the backend (e.g. on Render or custom domain)
+  // Render automatically provides RENDER_EXTERNAL_URL: https://reviewcv-ai.onrender.com
+  const rawBackendUrl =
+    process.env.BACKEND_URL ||
+    process.env.RENDER_EXTERNAL_URL ||
+    (process.env.NODE_ENV === "production" ? "https://reviewcv-ai.onrender.com" : null);
+
+  const backendUrl = rawBackendUrl
+    ? rawBackendUrl.replace(/\/$/, "")
+    : `http://localhost:${process.env.PORT || 5000}`;
+
   const localFileUrl = `${backendUrl}/uploads/${filename}`;
 
   if (!hasCloudinary) {

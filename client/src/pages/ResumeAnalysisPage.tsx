@@ -18,15 +18,29 @@ const ResumeAnalysisPage: React.FC = () => {
 
   const backendBase =
     import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, "") ||
-    "http://localhost:5000";
+    "https://reviewcv-ai.onrender.com";
 
-  const resumeUrl = rawResumeUrl
-    ? rawResumeUrl.startsWith("http://") ||
-      rawResumeUrl.startsWith("https://") ||
-      rawResumeUrl.startsWith("blob:")
-      ? rawResumeUrl
-      : `${backendBase}${rawResumeUrl.startsWith("/") ? "" : "/"}${rawResumeUrl}`
-    : null;
+  // Sanitize resumeUrl: if the backend sent a local URL (e.g. localhost:10000) while in production,
+  // remap it to the actual public backend domain
+  const sanitizeResumeUrl = (url?: string | null): string | null => {
+    if (!url) return null;
+    if (url.startsWith("blob:")) return url;
+
+    // Check if the URL points to localhost while we have a remote backend
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url);
+    if (isLocalhost && !backendBase.includes("localhost")) {
+      const pathAfterHost = url.replace(/^https?:\/\/[^/]+/, "");
+      return `${backendBase}${pathAfterHost.startsWith("/") ? "" : "/"}${pathAfterHost}`;
+    }
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+
+    return `${backendBase}${url.startsWith("/") ? "" : "/"}${url}`;
+  };
+
+  const resumeUrl = sanitizeResumeUrl(rawResumeUrl);
 
   const handleDownloadPdf = async () => {
     if (!resumeUrl) return;
