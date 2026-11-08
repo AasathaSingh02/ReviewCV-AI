@@ -1,6 +1,6 @@
 # 📄 ReviewCV AI - AI Resume Analyzer & ATS Optimizer
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://reviewcv-ai.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Vercel-success?style=for-the-badge&logo=vercel)](https://review-cv-ai.vercel.app)
 [![Backend Status](https://img.shields.io/badge/Backend%20API-Render-informational?style=for-the-badge&logo=render)](https://reviewcv-ai.onrender.com)
 [![Database](https://img.shields.io/badge/Database-MongoDB%20Atlas-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
 [![Tech Stack](https://img.shields.io/badge/Stack-MERN-blueviolet?style=for-the-badge)](#tech-stack)
@@ -13,7 +13,7 @@
 
 | Component | Platform | Live URL |
 |---|---|---|
-| **Frontend Web App** | Vercel | [https://reviewcv-ai.vercel.app](https://reviewcv-ai.vercel.app) |
+| **Frontend Web App** | Vercel | [https://review-cv-ai.vercel.app](https://review-cv-ai.vercel.app) |
 | **Backend REST API** | Render | [https://reviewcv-ai.onrender.com](https://reviewcv-ai.onrender.com) |
 | **API Health Check** | Render | [https://reviewcv-ai.onrender.com/healthcheck](https://reviewcv-ai.onrender.com/healthcheck) |
 
