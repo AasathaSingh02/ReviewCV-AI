@@ -5,6 +5,7 @@
 [![Database](https://img.shields.io/badge/Database-MongoDB%20Atlas-green?style=for-the-badge&logo=mongodb)](https://www.mongodb.com/)
 [![Tech Stack](https://img.shields.io/badge/Stack-MERN-blueviolet?style=for-the-badge)](#tech-stack)
 
+
 **ReviewCV AI** is an intelligent, full-stack AI-powered resume review system that calculates ATS scores, identifies missing sections & buzzwords, extracts strong action verbs, suggests actionable improvements, previews resumes in real-time, and offers AI bullet-point rewrites.
 
 ---
