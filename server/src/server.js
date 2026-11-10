@@ -80,6 +80,11 @@ app.get("/", (req, res) => {
   res.json({ message: "Server is running fine 🚀" });
 });
 
+// Health route
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "online" });
+});
+
 // Enhanced health check
 app.get("/healthcheck", async (req, res) => {
   const health = {
