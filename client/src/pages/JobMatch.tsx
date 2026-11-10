@@ -9,7 +9,7 @@ import {
   clearJobMatch,
   restoreJobMatch,
 } from "@/app/features/jobMatchSlice";
-import { Loader2, MessageSquare, Target, Trash2 } from "lucide-react";
+import { Loader2, MessageSquare, Target, Trash2, FileCheck2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,12 +22,33 @@ const JobMatch: React.FC = () => {
   const dispatch = useAppDispatch();
   const { result, loading, error } = useAppSelector((state) => state.jobMatch);
 
+  // ✅ Read previously-analyzed resume from Redux store
+  const previousResumeData = useAppSelector((s) => s.resumeAnalysis.data);
+  const previousResumeName = previousResumeData?.resumeName;
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [useExistingResume, setUseExistingResume] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
   const { progress, stage, complete } = useAnalysisProgress(loading);
 
+  // Auto-select existing resume if available and no file chosen yet
+  useEffect(() => {
+    if (previousResumeName && !selectedFile) {
+      setUseExistingResume(true);
+    }
+  }, [previousResumeName, selectedFile]);
+
   const handleAnalyze = async () => {
-    if (!selectedFile || !jobDescription.trim()) return;
+    if (!jobDescription.trim()) return;
+
+    // If using existing resume from analysis, we still need a file for the API
+    // We'll send just the job description context — but the backend requires a PDF.
+    // So we disable useExistingResume flow if no file. User must upload.
+    if (!selectedFile) {
+      toast.error("Please upload your resume PDF to continue.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("resume", selectedFile);
     formData.append("jobDescription", jobDescription);
@@ -72,6 +93,18 @@ const JobMatch: React.FC = () => {
         <div className="space-y-6 animate-slide-in">
           <div className="space-y-2">
             <Label className="text-lg flex items-center gap-2">📄 Upload Resume</Label>
+
+            {/* ✅ Show previous resume info if available */}
+            {previousResumeName && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-sm">
+                <FileCheck2 className="w-4 h-4 text-green-500 shrink-0" />
+                <span className="text-muted-foreground">
+                  Previously analyzed: <strong className="text-foreground">{previousResumeName}</strong>
+                </span>
+                <span className="text-xs text-muted-foreground ml-auto">(Upload a new PDF below to analyze a different resume)</span>
+              </div>
+            )}
+
             <PdfUpload selectedFile={selectedFile} onFileSelect={setSelectedFile} />
           </div>
 

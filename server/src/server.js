@@ -30,6 +30,8 @@ app.set("trust proxy", 1);
 const configuredClientUrl = process.env.CLIENT_URL?.trim();
 const allowedOrigins = [
   "https://resumindai-ashy.vercel.app",
+  "https://review-cv-ai.vercel.app",
+  "https://reviewcv-ai.vercel.app",
   "http://localhost:5173",
   "http://localhost:3000",
   "http://127.0.0.1:5173",
@@ -42,6 +44,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const isAllowed = allowedOrigins.includes(origin) ||
+      /^https:\/\/[a-z0-9-]+(\.vercel\.app)$/.test(origin) ||
       (process.env.NODE_ENV === "development" && /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin));
 
     if (isAllowed) {

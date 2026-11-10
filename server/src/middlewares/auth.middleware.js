@@ -14,7 +14,15 @@ export const userAuth = async (req, res, next) => {
 
     // Support guest token
     if (token === "guest-demo-token" || token === "guest") {
-      req.user = inMemoryUsers.get("guest@resumind.ai");
+      req.user = inMemoryUsers.get("guest@reviewcv.ai") || {
+        _id: "guest-user-id-001",
+        id: "guest-user-id-001",
+        firstName: "Guest",
+        lastName: "User",
+        email: "guest@reviewcv.ai",
+        role: "user",
+        avatar: "micah",
+      };
       return next();
     }
 

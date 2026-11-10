@@ -10,6 +10,15 @@ const resumeReportSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // ✅ Store PDF as base64 when Cloudinary is not configured (Render ephemeral FS fix)
+  fileData: {
+    type: String, // base64 encoded PDF
+    default: null,
+  },
+  fileMimeType: {
+    type: String,
+    default: "application/pdf",
+  },
   aiFeedback: {
     type: mongoose.Schema.Types.Mixed, 
     required: true,

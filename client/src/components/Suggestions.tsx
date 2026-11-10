@@ -41,7 +41,7 @@ const Suggestions: React.FC = () => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
       whileHover={{ scale: 1.03 }}
-      className="rounded-2xl backdrop-blur-lg bg-white/5 border border-white/10 shadow-xl hover:shadow-2xl transition-all duration-300 p-4"
+      className="rounded-2xl bg-card border border-border shadow-xl hover:shadow-2xl transition-all duration-300 p-4"
     >
       {children}
     </motion.div>
@@ -52,22 +52,22 @@ const Suggestions: React.FC = () => {
       {/* ✅ Suggestions */}
       <GlassCard delay={0}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <CheckCircle2 className="text-green-400 w-5 h-5" />
             Improvement Suggestions
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 pl-4">
           <ul className="space-y-2">
-            {suggestions.map((sugg, i) => (
+            {suggestions.length > 0 ? suggestions.map((sugg, i) => (
               <li
                 key={i}
                 className="flex gap-2 items-start text-sm text-muted-foreground"
               >
-                <CheckCircle2 className="text-green-500 mt-1 w-4 h-4" />
+                <CheckCircle2 className="text-green-500 mt-1 w-4 h-4 shrink-0" />
                 {sugg}
               </li>
-            ))}
+            )) : <li className="text-sm text-muted-foreground">No suggestions — great resume!</li>}
           </ul>
         </CardContent>
       </GlassCard>
@@ -75,33 +75,33 @@ const Suggestions: React.FC = () => {
       {/* ✅ Buzzwords */}
       <GlassCard delay={0.1}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <ZapIcon className="text-yellow-400 w-5 h-5" /> Buzzwords Analysis
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {buzzwords.map((term, i) => (
+          {buzzwords.length > 0 ? buzzwords.map((term, i) => (
             <div key={i} className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">
                 {term}
               </span>
               <Badge variant="destructive" className="text-xs">
-                x
+                overused
               </Badge>
             </div>
-          ))}
+          )) : <span className="text-sm text-muted-foreground">No buzzwords detected — good!</span>}
         </CardContent>
       </GlassCard>
 
       {/* ✅ Missing Sections */}
       <GlassCard delay={0.2}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <FileWarning className="text-red-400 w-5 h-5" /> Missing Sections
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {missing_sections.map((section, i) => (
+          {missing_sections.length > 0 ? missing_sections.map((section, i) => (
             <div key={i} className="flex justify-between items-center">
               <span className="text-sm font-medium text-muted-foreground">
                 {section}
@@ -110,44 +110,44 @@ const Suggestions: React.FC = () => {
                 Optional
               </Badge>
             </div>
-          ))}
+          )) : <span className="text-sm text-muted-foreground">All key sections present ✓</span>}
         </CardContent>
       </GlassCard>
 
       {/* ✅ Action Verbs */}
       <GlassCard delay={0.3}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
             <CheckCircle2 className="text-green-400 w-5 h-5" /> Strong Action
             Verbs
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          {action_verbs.map((verb, i) => (
+          {action_verbs.length > 0 ? action_verbs.map((verb, i) => (
             <Badge
               key={i}
               variant="outline"
-              className="text-xs border-green-500 text-green-400"
+              className="text-xs border-green-500 text-green-600 dark:text-green-400"
             >
               {verb}
             </Badge>
-          ))}
+          )) : <span className="text-sm text-muted-foreground">No strong verbs detected</span>}
         </CardContent>
       </GlassCard>
 
       {/* ✅ Repeated Phrases */}
       <GlassCard delay={0.4}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
-            <QuoteIcon className="text-yellow-300 w-5 h-5" /> Repeated Phrases
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <QuoteIcon className="text-yellow-500 dark:text-yellow-300 w-5 h-5" /> Repeated Phrases
           </CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2">
-          {repeated_phrases.map((phrase, i) => (
-            <Badge key={i} variant="secondary" className="text-xs bg-muted">
+          {repeated_phrases.length > 0 ? repeated_phrases.map((phrase, i) => (
+            <Badge key={i} variant="secondary" className="text-xs">
               {phrase}
             </Badge>
-          ))}
+          )) : <span className="text-sm text-muted-foreground">No repeated phrases — great!</span>}
         </CardContent>
       </GlassCard>
 
@@ -155,8 +155,8 @@ const Suggestions: React.FC = () => {
       {tone_analysis && (
         <GlassCard delay={0.5}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
-              <GaugeIcon className="text-blue-400 w-5 h-5" /> Tone Analysis
+            <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+              <GaugeIcon className="text-blue-500 dark:text-blue-400 w-5 h-5" /> Tone Analysis
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -165,7 +165,7 @@ const Suggestions: React.FC = () => {
             </div>
             <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
               <div
-                className="bg-primary h-full rounded-full text-xs text-center text-white"
+                className="bg-primary h-full rounded-full text-xs text-center text-primary-foreground"
                 style={{ width: "85%" }}
               >
                 85% confidence
@@ -181,12 +181,12 @@ const Suggestions: React.FC = () => {
       {/* ✅ Final Verdict */}
       <GlassCard delay={0.6}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-white">
-            <UserCheck2 className="text-blue-300 w-5 h-5" /> Final Verdict
+          <CardTitle className="flex items-center gap-2 text-xl font-semibold text-foreground">
+            <UserCheck2 className="text-blue-500 dark:text-blue-300 w-5 h-5" /> Final Verdict
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-blue-200 text-base font-medium">
+          <p className="text-foreground text-base font-medium">
             {verdict_summary || "Good foundation with room for improvement"}
           </p>
         </CardContent>

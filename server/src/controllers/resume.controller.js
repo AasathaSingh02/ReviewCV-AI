@@ -195,11 +195,34 @@ export const analyzeResume = async (req, res) => {
 
     // Step 8: Save report
     const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
+
+    // ✅ If no Cloudinary, store base64 PDF in DB for persistent serving on Render
+    const hasCloudinaryConfigured =
+      Boolean(process.env.CLOUDINARY_NAME) &&
+      Boolean(process.env.CLOUDINARY_KEY) &&
+      Boolean(process.env.CLOUDINARY_SECRET);
+
+    let fileData = null;
+    let finalResumeUrl = resumeUrl;
+
+    if (!hasCloudinaryConfigured && filePath && fs.existsSync(filePath)) {
+      try {
+        const pdfBuffer = fs.readFileSync(filePath);
+        fileData = pdfBuffer.toString("base64");
+        console.log("[RESUME] PDF stored as base64 in DB (no Cloudinary)");
+        // We'll set the final URL after saving (need reportId)
+      } catch (e) {
+        console.warn("[RESUME] Could not read file for base64 storage:", e.message);
+      }
+    }
+
     let savedReport = null;
     const reportData = {
       _id: "rep_" + Date.now(),
       user: req.user?._id || "guest-user",
       fileUrl: resumeUrl || "",
+      fileData,
+      fileMimeType: "application/pdf",
       aiFeedback: JSON.stringify(aiReport),
       score: aiReport.ats_score || 0,
       resumeName,
@@ -223,11 +246,21 @@ export const analyzeResume = async (req, res) => {
       inMemoryReports.set(savedReport._id, savedReport);
     }
 
+    // ✅ If we stored base64, return a persistent /api/resume/file/:reportId URL
+    if (fileData && savedReport._id) {
+      const backendBase =
+        process.env.BACKEND_URL ||
+        process.env.RENDER_EXTERNAL_URL ||
+        (process.env.NODE_ENV === "production" ? "https://reviewcv-ai.onrender.com" : `http://localhost:${process.env.PORT || 5000}`);
+      finalResumeUrl = `${backendBase.replace(/\/$/, "")}/api/resume/file/${savedReport._id}`;
+      console.log("[RESUME] Persistent file URL:", finalResumeUrl);
+    }
+
     return res.status(200).json({
       message: aiWarning
         ? "Resume saved with limited AI analysis"
         : "Resume analyzed and saved successfully",
-      resumeUrl,
+      resumeUrl: finalResumeUrl,
       analysis: aiReport,
       rewrites: savedReport.rewrites,
       reportId: savedReport._id,
@@ -332,11 +365,34 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
 
     // Step 8: Save report
     const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
+
+    // ✅ If no Cloudinary, store base64 PDF in DB for persistent serving on Render
+    const hasCloudinaryConfigured =
+      Boolean(process.env.CLOUDINARY_NAME) &&
+      Boolean(process.env.CLOUDINARY_KEY) &&
+      Boolean(process.env.CLOUDINARY_SECRET);
+
+    let fileData = null;
+    let finalResumeUrl = resumeUrl;
+
+    if (!hasCloudinaryConfigured && filePath && fs.existsSync(filePath)) {
+      try {
+        const pdfBuffer = fs.readFileSync(filePath);
+        fileData = pdfBuffer.toString("base64");
+        console.log("[RESUME] PDF stored as base64 in DB (no Cloudinary)");
+        // We'll set the final URL after saving (need reportId)
+      } catch (e) {
+        console.warn("[RESUME] Could not read file for base64 storage:", e.message);
+      }
+    }
+
     let savedReport = null;
     const reportData = {
       _id: "rep_" + Date.now(),
       user: req.user?._id || "guest-user",
       fileUrl: resumeUrl || "",
+      fileData,
+      fileMimeType: "application/pdf",
       aiFeedback: JSON.stringify(aiReport),
       score: aiReport.ats_score || 0,
       resumeName,
@@ -360,11 +416,21 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
       inMemoryReports.set(savedReport._id, savedReport);
     }
 
+    // ✅ If we stored base64, return a persistent /api/resume/file/:reportId URL
+    if (fileData && savedReport._id) {
+      const backendBase =
+        process.env.BACKEND_URL ||
+        process.env.RENDER_EXTERNAL_URL ||
+        (process.env.NODE_ENV === "production" ? "https://reviewcv-ai.onrender.com" : `http://localhost:${process.env.PORT || 5000}`);
+      finalResumeUrl = `${backendBase.replace(/\/$/, "")}/api/resume/file/${savedReport._id}`;
+      console.log("[RESUME] Persistent file URL:", finalResumeUrl);
+    }
+
     return res.status(200).json({
       message: aiWarning
         ? "Resume saved with limited AI analysis"
         : "Resume analyzed and saved successfully",
-      resumeUrl,
+      resumeUrl: finalResumeUrl,
       analysis: aiReport,
       rewrites: savedReport.rewrites,
       reportId: savedReport._id,
@@ -840,6 +906,51 @@ export const deleteReport = async (req, res) => {
       success: false,
       error: "Failed to delete report: " + err.message,
     });
+  }
+};
+
+
+// ✅ GET /api/resume/file/:reportId
+// Serves the base64-stored PDF from MongoDB (persistent on Render — no ephemeral FS needed)
+export const serveResumeFile = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
+
+    let report = null;
+    if (isDbConnected()) {
+      report = await ResumeReport.findById(reportId).select("fileData fileMimeType resumeName fileUrl");
+    }
+    if (!report) {
+      report = inMemoryReports.get(reportId);
+    }
+
+    if (!report) {
+      return res.status(404).json({ error: "Report not found" });
+    }
+
+    // If we have base64 data stored, serve it directly
+    if (report.fileData) {
+      const buffer = Buffer.from(report.fileData, "base64");
+      const filename = report.resumeName || "resume.pdf";
+      res.set({
+        "Content-Type": report.fileMimeType || "application/pdf",
+        "Content-Disposition": `inline; filename="${filename}"`,
+        "Content-Length": buffer.length,
+        "Cache-Control": "public, max-age=86400",
+      });
+      return res.send(buffer);
+    }
+
+    // Fallback: redirect to the original fileUrl if available
+    if (report.fileUrl) {
+      return res.redirect(report.fileUrl);
+    }
+
+    return res.status(404).json({ error: "No PDF data available for this report" });
+  } catch (err) {
+    console.error("[SERVE-FILE] Error:", err.message);
+    return res.status(500).json({ error: "Failed to serve file: " + err.message });
   }
 };
 

@@ -8,7 +8,8 @@ import {
     getResumeReportById,
     getResumeReports,
     reanalyzeResume,
-    rewriteAISuggestion
+    rewriteAISuggestion,
+    serveResumeFile,
 }
 from "../controllers/resume.controller.js";
 import { userAuth } from "../middlewares/auth.middleware.js";
@@ -26,6 +27,10 @@ resumeRouter.post("/ai-suggestion", userAuth, upload.single("resume"), aiSuggest
 
 // GET /api/resume/history
 resumeRouter.get("/history", userAuth, getResumeReports);
+
+
+// ✅ GET /api/resume/file/:reportId — Serve stored base64 PDF (Render persistent fix)
+resumeRouter.get("/file/:reportId", serveResumeFile);
 
 
 // DELETE /resume/:reportId
