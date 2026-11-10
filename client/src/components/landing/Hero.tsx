@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles, Zap } from "lucide-react";
+import { ArrowRight, Sparkles, Zap, CheckCircle2, Briefcase } from "lucide-react";
 import { useNavigate } from "react-router-dom"; // ✅ Import navigation hook
 
 type HeroProps = {
@@ -122,6 +122,126 @@ export const Hero: React.FC<HeroProps> = () => {
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
               <span>95% ATS Pass Rate</span>
+            </div>
+          </motion.div>
+
+          {/* 🖥️ Live Product Demo Preview Mockup */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 1.3 }}
+            className="mt-12 text-left rounded-2xl border border-white/30 dark:border-gray-700/40 bg-white/70 dark:bg-gray-950/70 backdrop-blur-2xl shadow-2xl overflow-hidden"
+          >
+            {/* Window Title Bar */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-red-400/90" />
+                <div className="w-3 h-3 rounded-full bg-yellow-400/90" />
+                <div className="w-3 h-3 rounded-full bg-green-400/90" />
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400 ml-2">
+                  ReviewCV AI — Realtime ATS Diagnostic
+                </span>
+              </div>
+              <span className="text-xs px-2.5 py-0.5 rounded-full bg-green-500/10 text-green-600 dark:text-green-400 font-medium flex items-center gap-1.5 border border-green-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-ping" />
+                Live Scan Demo
+              </span>
+            </div>
+
+            {/* Mock Content Grid */}
+            <div className="p-6 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              {/* Left: Mini Resume with Scanning Laser Bar */}
+              <div className="md:col-span-5 relative p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/90 shadow-inner overflow-hidden">
+                {/* Animated Scan Line */}
+                <motion.div
+                  className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_12px_rgba(59,130,246,0.8)] z-10"
+                  animate={{ top: ["8%", "90%", "8%"] }}
+                  transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+                />
+
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white flex items-center justify-center font-bold text-xs shadow">
+                      AS
+                    </div>
+                    <div>
+                      <div className="h-3 w-28 bg-gray-300 dark:bg-gray-700 rounded" />
+                      <div className="h-2 w-20 bg-gray-200 dark:bg-gray-800 rounded mt-1" />
+                    </div>
+                  </div>
+
+                  <div className="h-2 w-full bg-blue-500/20 rounded" />
+                  <div className="space-y-1.5 pt-1">
+                    <div className="h-2 w-5/6 bg-gray-200 dark:bg-gray-800 rounded" />
+                    <div className="h-2 w-4/6 bg-gray-200 dark:bg-gray-800 rounded" />
+                    <div className="h-2 w-full bg-gray-200 dark:bg-gray-800 rounded" />
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100 dark:border-gray-800 space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">Clean single-column ATS layout</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">Quantified project bullet points</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right: Live ATS Results Card */}
+              <div className="md:col-span-7 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="relative flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-extrabold text-xl shadow-lg">
+                      92%
+                    </div>
+                    <div>
+                      <div className="text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">
+                        ATS Match Score
+                      </div>
+                      <div className="text-base font-bold text-gray-900 dark:text-white">
+                        Recruiter-Ready (Top Tier)
+                      </div>
+                    </div>
+                  </div>
+
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-300 border border-purple-500/20">
+                    ⚡ 0 Formatting Errors
+                  </span>
+                </div>
+
+                {/* Suggested Job Roles Pills */}
+                <div className="space-y-1.5">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
+                    Matched Eligible Roles:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {["Full Stack Developer", "Frontend Engineer", "Node.js Architect"].map((role) => (
+                      <span
+                        key={role}
+                        className="text-xs px-2.5 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 font-medium shadow-xs"
+                      >
+                        {role}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Highlights / Strengths */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2.5 rounded-lg bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-300">
+                    <strong>14 Strong Action Verbs</strong>
+                    <p className="text-[11px] opacity-80 mt-0.5">Architected, Spearheaded, Optimized</p>
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300">
+                    <strong>Live Job Search Links</strong>
+                    <p className="text-[11px] opacity-80 mt-0.5">1-click to LinkedIn & Naukri</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </motion.div>
