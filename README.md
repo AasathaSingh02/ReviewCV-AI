@@ -46,7 +46,13 @@ Seamless PDF preview embedded in the browser with one-click direct PDF download 
 
 ---
 
-### 5. Cloud-Connected Backend & Live MongoDB Atlas
+### 5. AI Job Match & Eligible Roles Discovery
+Analyzes resume skills to automatically recommend eligible job roles (e.g. Frontend Developer, Backend Developer, Data Scientist) and enables 1-click live job searches across LinkedIn, Naukri, Indeed, Internshala, and Glassdoor.
+![AI Job Matching & Eligible Roles](docs/screenshots/06-job-matching.png)
+
+---
+
+### 6. Cloud-Connected Backend & Live MongoDB Atlas
 Node.js + Express backend running live on Render, connected to MongoDB Atlas with graceful failover, automated multi-tier PDF parsing, and UptimeRobot continuous monitoring.
 ![Render Backend Live Logs](docs/screenshots/05-backend-render-live.jpg)
 
