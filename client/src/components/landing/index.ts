@@ -1,4 +1,5 @@
 export {Hero} from "./Hero"
+export { LiveDemoPreview } from "./LiveDemoPreview";
 export { Navbar } from "./Navbar";
 export { FeaturesSection } from "./FeaturesSection";
 export { HowItWorks } from "./HowItWorks";
