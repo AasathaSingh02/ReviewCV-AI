@@ -12,6 +12,8 @@ export interface AnalysisDetails {
   action_verbs: string[];
   repeated_phrases: string[];
   verdict_summary: string;
+  // AI-detected eligible job roles from the resume
+  eligible_roles?: string[];
 }
 
 export interface AnalysisResponse {

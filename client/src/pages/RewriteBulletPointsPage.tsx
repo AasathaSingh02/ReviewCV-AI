@@ -214,13 +214,14 @@
 
 
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import type { AppDispatch } from "@/app/store";
+import { useAppSelector } from "@/hooks/redux";
 import { aiSuggestionAnalyzeResume } from "@/app/features/resumeAnalysis/resumeAnalysisSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, UploadCloud, FileText, Download, RefreshCcw } from "lucide-react";
+import { Sparkles, UploadCloud, FileText, Download, RefreshCcw, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AnalysisProgressBar } from "@/components/AnalysisProgressBar";
@@ -236,13 +237,32 @@ export const RewriteBulletPointsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // ✅ Auto-load from previous analysis stored in Redux / localStorage
+  const previousData = useAppSelector((s) => s.resumeAnalysis.data);
+  const historyData = useAppSelector((s) => s.resumeAnalysis.history);
+
   const [resumeUrl, setResumeUrl] = useState<string>("");
   const [resumeName, setResumeName] = useState<string>("");
   const [rewrites, setRewrites] = useState<Rewrite[]>([]);
   const [applied, setApplied] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [reportId, setReportId] = useState<string>("");
+  const [autoLoaded, setAutoLoaded] = useState(false);
   const { progress, stage, complete } = useAnalysisProgress(loading);
+
+  // ✅ On mount: auto-populate from previous analysis (if any)
+  useEffect(() => {
+    // Priority 1: current analysis data in Redux
+    const source = previousData ?? historyData?.[0] ?? null;
+    if (source && source.rewrites && source.rewrites.length > 0 && !resumeUrl) {
+      setResumeUrl(source.resumeUrl || "");
+      setResumeName(source.resumeName || "resume.pdf");
+      setRewrites(source.rewrites);
+      setReportId(source.reportId || "");
+      setAutoLoaded(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previousData, historyData]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -319,6 +339,7 @@ export const RewriteBulletPointsPage: React.FC = () => {
     setRewrites([]);
     setApplied({});
     setReportId("");
+    setAutoLoaded(false);
     localStorage.removeItem("resume-analysis-latest");
     localStorage.removeItem("applied-rewrites");
     fileInputRef.current?.click();
@@ -340,7 +361,10 @@ export const RewriteBulletPointsPage: React.FC = () => {
         <div className="flex flex-col items-center justify-center h-[60vh] text-center rounded-xl border p-10 bg-muted/50 shadow-inner backdrop-blur-md">
           <UploadCloud className="w-12 h-12 mb-4 text-muted-foreground" />
           <p className="text-lg font-medium">No resume uploaded</p>
-          <p className="text-muted-foreground mb-4">Upload your resume to get live bullet suggestions.</p>
+          <p className="text-muted-foreground mb-4">
+            Upload your resume below to get live bullet suggestions. <br />
+            If you already analyzed a resume on the Resume Analysis page, it will be auto-loaded.
+          </p>
           <Button asChild disabled={loading}>
             <label htmlFor="upload-resume" className="cursor-pointer">
               Upload Resume
@@ -357,6 +381,24 @@ export const RewriteBulletPointsPage: React.FC = () => {
         </div>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
+          {/* ✅ Auto-loaded banner */}
+          {autoLoaded && (
+            <div className="md:col-span-2 flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-sm">
+              <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
+              <span className="text-muted-foreground">
+                Auto-loaded from your previous analysis:{" "}
+                <strong className="text-foreground">{resumeName}</strong>
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={handleUploadNewClick}
+              >
+                <RefreshCcw className="w-3 h-3 mr-1" /> Upload Different Resume
+              </Button>
+            </div>
+          )}
           {/* PDF Viewer */}
           <div className="bg-background/30 border rounded-xl backdrop-blur-md shadow-xl p-4">
             <div className="flex justify-between items-center mb-3">

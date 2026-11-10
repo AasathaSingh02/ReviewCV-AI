@@ -259,13 +259,19 @@ const resumeAnalysisSlice = createSlice({
       })
 
       // ✅ Fetch History
+      .addCase(fetchResumeHistory.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(
         fetchResumeHistory.fulfilled,
         (state, action: PayloadAction<AnalysisResponse[]>) => {
+          state.loading = false;
           state.history = action.payload;
         }
       )
       .addCase(fetchResumeHistory.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload ?? "Failed to fetch history.";
       })
 

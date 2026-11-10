@@ -194,6 +194,34 @@ export const analyzeResumeLocally = (resumeText = "") => {
     verdict_summary = `Good starting draft (${ats_score}/100). Adding structured sections (Summary, Certifications) and replacing passive language with strong action verbs will substantially boost your ATS ranking.`;
   }
 
+  // 11. Detect Eligible Roles from skills/tech stack mentioned in resume
+  const rolePatterns = [
+    { pattern: /\b(react|vue|angular|svelte|next\.?js|html|css|tailwind)\b/i, role: "Frontend Developer" },
+    { pattern: /\b(node\.?js|express|django|flask|fastapi|spring|rails)\b/i, role: "Backend Developer" },
+    { pattern: /\b(full.?stack|mern|mean|lamp)\b/i, role: "Full Stack Developer" },
+    { pattern: /\b(python|data science|pandas|numpy|scikit|matplotlib)\b/i, role: "Data Scientist" },
+    { pattern: /\b(machine learning|deep learning|tensorflow|pytorch|keras|nlp)\b/i, role: "ML Engineer" },
+    { pattern: /\b(sql|postgresql|mysql|mongodb|power bi|tableau|excel|bi)\b/i, role: "Data Analyst" },
+    { pattern: /\b(aws|azure|gcp|google cloud|cloud|ec2|s3|lambda)\b/i, role: "Cloud Engineer" },
+    { pattern: /\b(docker|kubernetes|ci\/cd|jenkins|terraform|devops|ansible)\b/i, role: "DevOps Engineer" },
+    { pattern: /\b(android|kotlin|java mobile)\b/i, role: "Android Developer" },
+    { pattern: /\b(ios|swift|objective-c|xcode)\b/i, role: "iOS Developer" },
+    { pattern: /\b(flutter|react native|xamarin|ionic)\b/i, role: "Mobile App Developer" },
+    { pattern: /\b(ui|ux|figma|sketch|adobe xd|user experience|design)\b/i, role: "UI/UX Designer" },
+    { pattern: /\b(cybersecurity|penetration testing|ethical hacking|soc|siem)\b/i, role: "Security Engineer" },
+    { pattern: /\b(blockchain|solidity|ethereum|web3|smart contract)\b/i, role: "Blockchain Developer" },
+    { pattern: /\b(java|j2ee|spring boot|hibernate)\b/i, role: "Java Developer" },
+    { pattern: /\b(c\+\+|c#|\.net|unity|game)\b/i, role: ".NET / Game Developer" },
+  ];
+
+  const eligible_roles = [];
+  for (const { pattern, role } of rolePatterns) {
+    if (pattern.test(lower) && !eligible_roles.includes(role)) {
+      eligible_roles.push(role);
+    }
+    if (eligible_roles.length >= 6) break;
+  }
+
   return {
     ats_score,
     suggestions: suggestions.slice(0, 5),
@@ -203,6 +231,7 @@ export const analyzeResumeLocally = (resumeText = "") => {
     repeated_phrases: repeated_phrases.slice(0, 6),
     tone_analysis,
     verdict_summary,
+    eligible_roles,
   };
 };
 

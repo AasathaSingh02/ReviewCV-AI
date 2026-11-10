@@ -8,6 +8,7 @@ import {
   ChevronUp,
   Loader2,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppSelector, useAppDispatch } from "@/hooks/redux";
@@ -71,15 +72,47 @@ const HistoryPage = () => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-foreground">📂 Resume History</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-foreground">📂 Resume History</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => dispatch(fetchResumeHistory())}
+          disabled={loading}
+          className="flex items-center gap-2"
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Refresh
+        </Button>
+      </div>
 
-      {loading && <p className="text-muted-foreground">Loading...</p>}
-      {error && <p className="text-destructive">{error}</p>}
+      {loading && (
+        <div className="flex items-center gap-3 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          <span>Loading your resume history...</span>
+        </div>
+      )}
+      {error && (
+        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive">
+          <strong>Failed to load history:</strong> {error}
+          <br />
+          <span className="text-muted-foreground text-xs">Make sure you're logged in and the server is reachable.</span>
+        </div>
+      )}
 
       {history.length === 0 && !loading ? (
-        <p className="text-muted-foreground">
-          No history found. Upload a resume to get started.
-        </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center border rounded-xl bg-muted/30">
+          <FileText className="w-12 h-12 text-muted-foreground mb-4" />
+          <p className="text-lg font-medium text-foreground">No resume history yet</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            Upload a resume on the <strong>Resume Analysis</strong> page to get started. <br />
+            Your analysis will be saved here automatically.
+          </p>
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {history.map((report) => (

@@ -23,7 +23,8 @@ Your job is to analyze the following resume and return ONLY valid JSON with thes
   "action_verbs": ["string"],
   "missing_sections": ["string"],
   "tone_analysis": "string",
-  "verdict_summary": "string"
+  "verdict_summary": "string",
+  "eligible_roles": ["string"]
 }
 
 ### ATS Scoring Rules:
@@ -44,6 +45,11 @@ Only count these as "present" if explicitly labeled in the resume:
 - Awards / Honors
 
 Do not assume a section exists unless clearly titled. Return all missing sections.
+
+### Eligible Roles Rules:
+- Based on the candidate's skills, projects, and experience, list 4-6 specific job roles they are eligible for.
+- Examples: "Frontend Developer", "Full Stack Developer", "Data Scientist", "DevOps Engineer", "Python Developer", "Android Developer"
+- Be specific and realistic — only roles the candidate's skills support.
 
 CRITICAL: Return ONLY valid JSON. No markdown, no code blocks, no explanations, no comments. Just the JSON object starting with { and ending with }.
 
@@ -116,6 +122,10 @@ ${truncatedResumeText}
       : localFallback.repeated_phrases;
     parsed.tone_analysis = parsed.tone_analysis || localFallback.tone_analysis;
     parsed.verdict_summary = parsed.verdict_summary || localFallback.verdict_summary;
+    // ✅ Keep eligible_roles if AI returned them, else use local fallback
+    parsed.eligible_roles = Array.isArray(parsed.eligible_roles) && parsed.eligible_roles.length > 0
+      ? parsed.eligible_roles
+      : (localFallback.eligible_roles || []);
 
     return parsed;
   } catch (err) {
