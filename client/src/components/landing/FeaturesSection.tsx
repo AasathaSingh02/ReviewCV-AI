@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, Lightbulb, AlertTriangle, Trophy, Search } from 'lucide-react';
+import { BarChart3, Lightbulb, AlertTriangle, Trophy, Search, Briefcase } from 'lucide-react';
 
 const features = [
   {
@@ -37,6 +37,12 @@ const features = [
     title: 'Recruiter Match Potential',
     description: 'See how your resume matches against common recruiter search patterns and requirements.',
     gradient: 'from-indigo-500 to-blue-600'
+  },
+  {
+    icon: Briefcase,
+    title: 'Eligible Roles & Job Discovery',
+    description: 'Identify roles you are eligible for based on your resume, and discover live openings across top job platforms.',
+    gradient: 'from-pink-500 to-rose-600'
   }
 ];
 
