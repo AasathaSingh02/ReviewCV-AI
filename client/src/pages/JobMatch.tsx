@@ -27,16 +27,8 @@ const JobMatch: React.FC = () => {
   const previousResumeName = previousResumeData?.resumeName;
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [useExistingResume, setUseExistingResume] = useState(false);
   const [jobDescription, setJobDescription] = useState("");
   const { progress, stage, complete } = useAnalysisProgress(loading);
-
-  // Auto-select existing resume if available and no file chosen yet
-  useEffect(() => {
-    if (previousResumeName && !selectedFile) {
-      setUseExistingResume(true);
-    }
-  }, [previousResumeName, selectedFile]);
 
   const handleAnalyze = async () => {
     if (!jobDescription.trim()) return;

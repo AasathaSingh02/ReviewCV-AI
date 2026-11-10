@@ -52,6 +52,7 @@ export interface ApiResponse<T = unknown> {
   message: string;
   data?: T;
   devOtp?: string;
+  emailWarning?: string;
 }
 
 /** Payload for sending OTP */

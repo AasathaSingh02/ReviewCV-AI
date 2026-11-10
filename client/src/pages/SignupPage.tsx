@@ -57,8 +57,12 @@ export default function SignupPage() {
 
     if (sendOtp.fulfilled.match(resultAction)) {
       const devOtp = resultAction.payload?.devOtp;
+      const emailWarning = resultAction.payload?.emailWarning;
       if (devOtp) {
-        toast.info(`Dev Mode: Verification code is ${devOtp}`, { duration: 8000 });
+        toast.info(`📋 Your verification code is: ${devOtp}`, { duration: 15000 });
+        if (emailWarning) {
+          toast.warning("Email delivery unavailable — code shown above", { duration: 6000 });
+        }
       } else {
         toast.success("OTP sent to your email!");
       }

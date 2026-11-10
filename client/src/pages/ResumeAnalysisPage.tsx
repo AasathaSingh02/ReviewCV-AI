@@ -42,6 +42,13 @@ const ResumeAnalysisPage: React.FC = () => {
 
   const resumeUrl = sanitizeResumeUrl(rawResumeUrl);
 
+  // ✅ Detect stale /uploads/ URLs — these point to Render's ephemeral filesystem
+  // which gets wiped on restart. New uploads use /api/resume/file/:reportId instead.
+  const isStaleUploadsUrl =
+    resumeUrl !== null &&
+    /\/uploads\/[^/]+\.pdf/i.test(resumeUrl) &&
+    !resumeUrl.includes("cloudinary");
+
   const handleDownloadPdf = async () => {
     if (!resumeUrl) return;
     try {
@@ -125,7 +132,7 @@ const ResumeAnalysisPage: React.FC = () => {
         <UploadArea />
 
         {/* 📄 Resume Preview */}
-        {resumeUrl && (
+        {resumeUrl && !isStaleUploadsUrl && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -185,6 +192,25 @@ const ResumeAnalysisPage: React.FC = () => {
               </object>
             </div>
           </motion.div>
+        )}
+
+        {/* ⚠️ Stale resume URL warning — old uploads are gone from Render's ephemeral disk */}
+        {isStaleUploadsUrl && (
+          <div className="mt-6 p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 text-sm text-foreground">
+            <p className="font-semibold mb-1">⚠️ Resume Preview Unavailable</p>
+            <p className="text-muted-foreground">
+              The PDF file from your previous analysis is no longer available on the server.
+              Please <strong>re-upload your resume</strong> above to generate a fresh analysis with a working preview.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-3 border-yellow-500/40 text-yellow-600 dark:text-yellow-400 hover:bg-yellow-500/20"
+              onClick={() => dispatch(clearCurrent())}
+            >
+              <Trash2 className="w-4 h-4 mr-1.5" /> Clear Stale Analysis
+            </Button>
+          </div>
         )}
 
         {/* 🧱 Separator */}
