@@ -54,7 +54,10 @@ export const Footer: React.FC = () => {
             <h4 className="font-semibold mb-4">Connect</h4>
             <div className="flex space-x-4">
               <motion.a
-                href="#"
+                href="https://www.linkedin.com/in/aasatha-singh"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="LinkedIn"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors"
                 whileHover={{ scale: 1.1, y: -2 }}
                 whileTap={{ scale: 0.95 }}
@@ -62,7 +65,10 @@ export const Footer: React.FC = () => {
                 <Linkedin className="h-5 w-5" />
               </motion.a>
               <motion.a
-                href="#"
+                href="https://github.com/AasathaSingh02"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="GitHub"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors"
                 whileHover={{ scale: 1.1, y: -2 }}
                 whileTap={{ scale: 0.95 }}
@@ -70,7 +76,8 @@ export const Footer: React.FC = () => {
                 <Github className="h-5 w-5" />
               </motion.a>
               <motion.a
-                href="#"
+                href="mailto:aasathasingh02@gmail.com"
+                aria-label="Email"
                 className="p-2 bg-gray-800 rounded-lg hover:bg-blue-600 transition-colors"
                 whileHover={{ scale: 1.1, y: -2 }}
                 whileTap={{ scale: 0.95 }}
