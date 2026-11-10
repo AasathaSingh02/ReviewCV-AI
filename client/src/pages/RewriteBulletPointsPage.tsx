@@ -221,7 +221,7 @@ import { useAppSelector } from "@/hooks/redux";
 import { aiSuggestionAnalyzeResume } from "@/app/features/resumeAnalysis/resumeAnalysisSlice";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Sparkles, UploadCloud, FileText, Download, RefreshCcw, CheckCircle2 } from "lucide-react";
+import { Sparkles, UploadCloud, FileText, Download, RefreshCcw, CheckCircle2, FileWarning } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AnalysisProgressBar } from "@/components/AnalysisProgressBar";
@@ -250,12 +250,44 @@ export const RewriteBulletPointsPage: React.FC = () => {
   const [autoLoaded, setAutoLoaded] = useState(false);
   const { progress, stage, complete } = useAnalysisProgress(loading);
 
+  const backendBase =
+    import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, "") ||
+    "https://reviewcv-ai.onrender.com";
+
+  // Sanitize URL and fallback to persistent /api/resume/file/:reportId
+  const resolveResumeUrl = (url?: string | null, repId?: string | null): string => {
+    if (!url && !repId) return "";
+    if (url && url.startsWith("blob:")) return url;
+
+    // If reportId exists and the url is a stale /uploads/ or localhost path, use the persistent route
+    if (repId && (url?.includes("/uploads/") || !url || url.includes("localhost"))) {
+      return `${backendBase}/api/resume/file/${repId}`;
+    }
+
+    if (url) {
+      const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url);
+      if (isLocalhost && !backendBase.includes("localhost")) {
+        const pathAfterHost = url.replace(/^https?:\/\/[^/]+/, "");
+        return `${backendBase}${pathAfterHost.startsWith("/") ? "" : "/"}${pathAfterHost}`;
+      }
+      if (url.startsWith("http://") || url.startsWith("https://")) return url;
+      return `${backendBase}${pathAfterHostLeadingSlash(url)}`;
+    }
+
+    return "";
+  };
+
+  function pathAfterHostLeadingSlash(u: string) {
+    return u.startsWith("/") ? u : `/${u}`;
+  }
+
   // ✅ On mount: auto-populate from previous analysis (if any)
   useEffect(() => {
     // Priority 1: current analysis data in Redux
     const source = previousData ?? historyData?.[0] ?? null;
     if (source && source.rewrites && source.rewrites.length > 0 && !resumeUrl) {
-      setResumeUrl(source.resumeUrl || "");
+      const resolved = resolveResumeUrl(source.resumeUrl, source.reportId);
+      setResumeUrl(resolved);
       setResumeName(source.resumeName || "resume.pdf");
       setRewrites(source.rewrites);
       setReportId(source.reportId || "");
@@ -414,11 +446,24 @@ export const RewriteBulletPointsPage: React.FC = () => {
                 </Button>
               </div>
             </div>
-            <iframe
-              src={resumeUrl}
-              title={resumeName}
-              className="w-full h-[700px] rounded-md border"
-            />
+            {resumeUrl && /\/uploads\/[^/]+\.pdf/i.test(resumeUrl) && !resumeUrl.includes("cloudinary") ? (
+              <div className="flex flex-col items-center justify-center h-[500px] text-center p-6 border border-yellow-500/30 rounded-xl bg-yellow-500/10">
+                <FileWarning className="w-12 h-12 text-yellow-500 mb-3" />
+                <h3 className="font-semibold text-foreground text-base">Resume PDF Expired on Server</h3>
+                <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
+                  The PDF file from your previous session is no longer stored on the server. Your AI bullet suggestions are still saved on the right!
+                </p>
+                <Button variant="outline" size="sm" onClick={handleUploadNewClick}>
+                  <RefreshCcw className="w-3.5 h-3.5 mr-1.5" /> Re-upload Resume to View PDF
+                </Button>
+              </div>
+            ) : (
+              <iframe
+                src={resumeUrl}
+                title={resumeName}
+                className="w-full h-[700px] rounded-md border"
+              />
+            )}
           </div>
 
           {/* Rewrite Panel */}
