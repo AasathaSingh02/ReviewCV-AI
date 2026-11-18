@@ -34,3 +34,8 @@ pnpm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# Agent skills & local metadata
+.agents/
+skills-lock.json
+.puppeteerrc*

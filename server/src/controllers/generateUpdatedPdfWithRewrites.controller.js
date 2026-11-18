@@ -2,7 +2,6 @@
 import ResumeReport from "../models/ResumeReport.model.js";
 import axios from "axios";
 import { extractPdfText } from "../utils/extractPdfText.js";
-import puppeteer from "puppeteer";
 import path from "path";
 import fs from "fs/promises";
 import fsSync from "fs";
@@ -17,6 +16,14 @@ export const generateUpdatedPdfWithRewrites = async (req, res) => {
   const { appliedRewrites = {}, theme = "default", userData = {} } = req.body;
 
   try {
+    // Dynamically import Puppeteer so server startup is completely independent of Puppeteer evaluation
+    let puppeteer;
+    try {
+      puppeteer = (await import("puppeteer")).default;
+    } catch (importErr) {
+      console.error("[PUPPETEER] Dynamic import failed:", importErr.message);
+      return res.status(503).json({ error: "PDF generation service unavailable: " + importErr.message });
+    }
     // 1. Locate the Handlebars template (check server/templates and fallback to server/src/templates)
     let templatePath = path.join(__dirname, "..", "..", "templates", `${theme}.hbs`);
     if (!fsSync.existsSync(templatePath)) {

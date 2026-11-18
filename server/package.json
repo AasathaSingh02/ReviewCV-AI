@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/resume.test.js",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   },
@@ -45,5 +45,9 @@
   "devDependencies": {
     "mongodb-memory-server": "^11.3.0",
     "nodemon": "^3.1.10"
+  },
+  "//puppeteer": "Non-empty placeholder to stop Cosmiconfig from climbing parent directories on Windows",
+  "puppeteer": {
+    "skipDownload": false
   }
 }

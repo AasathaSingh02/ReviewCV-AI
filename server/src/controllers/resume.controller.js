@@ -2,6 +2,7 @@
 import fs from "fs";
 import axios from "axios";
 import tmp from "tmp-promise";
+import mongoose from "mongoose";
 import { extractPdfText } from "../utils/extractPdfText.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
 import { analyzeWithOpenRouter } from "../utils/analyzeWithOpenRouter.js";
@@ -9,6 +10,42 @@ import ResumeReport from "../models/ResumeReport.model.js";
 import PDFDocument from "pdfkit";
 import { rewriteAISuggestionWithOpenRouter } from "../utils/rewriteAISuggestionWithOpenRouter.js";
 import { rewriteBulletPointsSequentially } from "../utils/rewriteSequentially.js";
+
+/**
+ * Universal lookup helper for ResumeReport:
+ * If id is a valid 24-character hexadecimal ObjectId, queries by _id;
+ * otherwise queries by reportId (for custom 'rep_...' identifiers).
+ * Falls back to in-memory store if DB is unavailable.
+ */
+export const findReportById = async (id, filter = null) => {
+  if (!id) return null;
+  const isHexObjectId = mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === String(id);
+  const baseQuery = isHexObjectId ? { _id: id } : { reportId: String(id) };
+  const query = filter ? { ...baseQuery, ...filter } : baseQuery;
+  const { isDbConnected, getInMemoryReport } = await import("../utils/memoryStore.js");
+
+  let report = null;
+  if (isDbConnected()) {
+    try {
+      report = await ResumeReport.findOne(query);
+    } catch (dbErr) {
+      console.warn("[FIND-REPORT] DB query error:", dbErr.message);
+    }
+  }
+
+  if (!report) {
+    const mem = getInMemoryReport(id);
+    if (mem) {
+      if (filter) {
+        if (filter.user && mem.user && String(mem.user) !== String(filter.user)) return null;
+        if (filter.guestId && mem.guestId && mem.guestId !== filter.guestId) return null;
+      }
+      report = mem;
+    }
+  }
+
+  return report;
+};
 
 
 // export const analyzeResume = async (req, res) => {
@@ -194,7 +231,6 @@ export const analyzeResume = async (req, res) => {
     const aiWarning = aiReportRaw.ai_warning || aiReportRaw.error || null;
 
     // Step 8: Save report
-    const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
 
     // ✅ If no Cloudinary, store base64 PDF in DB for persistent serving on Render
     const hasCloudinaryConfigured =
@@ -217,9 +253,13 @@ export const analyzeResume = async (req, res) => {
     }
 
     let savedReport = null;
+    let persisted = false;
+    const repId = "rep_" + Date.now();
+    const isAuth = Boolean(req.user?._id && !req.user?.isGuest);
     const reportData = {
-      _id: "rep_" + Date.now(),
-      user: req.user?._id || "guest-user",
+      reportId: repId,
+      user: isAuth ? req.user._id : null,
+      guestId: !isAuth ? (req.guestId || "guest-demo-user") : null,
       fileUrl: resumeUrl || "",
       fileData,
       fileMimeType: "application/pdf",
@@ -233,26 +273,31 @@ export const analyzeResume = async (req, res) => {
       createdAt: new Date(),
     };
 
+    const { isDbConnected, saveInMemoryReport } = await import("../utils/memoryStore.js");
+
     if (isDbConnected()) {
       try {
         savedReport = await ResumeReport.create(reportData);
+        persisted = true;
       } catch (dbErr) {
         console.warn("[RESUME] DB save failed, falling back to memory:", dbErr.message);
         savedReport = reportData;
-        inMemoryReports.set(savedReport._id, savedReport);
+        saveInMemoryReport(repId, savedReport);
       }
     } else {
       savedReport = reportData;
-      inMemoryReports.set(savedReport._id, savedReport);
+      saveInMemoryReport(repId, savedReport);
     }
 
+    const publicReportId = savedReport.reportId || repId;
+
     // ✅ If we stored base64, return a persistent /api/resume/file/:reportId URL
-    if (fileData && savedReport._id) {
+    if (fileData && publicReportId) {
       const backendBase =
         process.env.BACKEND_URL ||
         process.env.RENDER_EXTERNAL_URL ||
         (process.env.NODE_ENV === "production" ? "https://reviewcv-ai.onrender.com" : `http://localhost:${process.env.PORT || 5000}`);
-      finalResumeUrl = `${backendBase.replace(/\/$/, "")}/api/resume/file/${savedReport._id}`;
+      finalResumeUrl = `${backendBase.replace(/\/$/, "")}/api/resume/file/${publicReportId}`;
       console.log("[RESUME] Persistent file URL:", finalResumeUrl);
     }
 
@@ -263,10 +308,11 @@ export const analyzeResume = async (req, res) => {
       resumeUrl: finalResumeUrl,
       analysis: aiReport,
       rewrites: savedReport.rewrites,
-      reportId: savedReport._id,
+      reportId: publicReportId,
       createdAt: savedReport.createdAt,
       resumeName,
       warning: aiWarning,
+      persisted,
     });
   } catch (err) {
     console.error("❌ Resume analysis failed:", err);
@@ -364,7 +410,6 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
     const aiWarning = aiReportRaw.ai_warning || aiReportRaw.error || null;
 
     // Step 8: Save report
-    const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
 
     // ✅ If no Cloudinary, store base64 PDF in DB for persistent serving on Render
     const hasCloudinaryConfigured =
@@ -387,9 +432,13 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
     }
 
     let savedReport = null;
+    let persisted = false;
+    const repId = "rep_" + Date.now();
+    const isAuth = Boolean(req.user?._id && !req.user?.isGuest);
     const reportData = {
-      _id: "rep_" + Date.now(),
-      user: req.user?._id || "guest-user",
+      reportId: repId,
+      user: isAuth ? req.user._id : null,
+      guestId: !isAuth ? (req.guestId || "guest-demo-user") : null,
       fileUrl: resumeUrl || "",
       fileData,
       fileMimeType: "application/pdf",
@@ -403,26 +452,31 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
       createdAt: new Date(),
     };
 
+    const { isDbConnected, saveInMemoryReport } = await import("../utils/memoryStore.js");
+
     if (isDbConnected()) {
       try {
         savedReport = await ResumeReport.create(reportData);
+        persisted = true;
       } catch (dbErr) {
         console.warn("[RESUME] DB save failed, falling back to memory:", dbErr.message);
         savedReport = reportData;
-        inMemoryReports.set(savedReport._id, savedReport);
+        saveInMemoryReport(repId, savedReport);
       }
     } else {
       savedReport = reportData;
-      inMemoryReports.set(savedReport._id, savedReport);
+      saveInMemoryReport(repId, savedReport);
     }
 
+    const publicReportId = savedReport.reportId || repId;
+
     // ✅ If we stored base64, return a persistent /api/resume/file/:reportId URL
-    if (fileData && savedReport._id) {
+    if (fileData && publicReportId) {
       const backendBase =
         process.env.BACKEND_URL ||
         process.env.RENDER_EXTERNAL_URL ||
         (process.env.NODE_ENV === "production" ? "https://reviewcv-ai.onrender.com" : `http://localhost:${process.env.PORT || 5000}`);
-      finalResumeUrl = `${backendBase.replace(/\/$/, "")}/api/resume/file/${savedReport._id}`;
+      finalResumeUrl = `${backendBase.replace(/\/$/, "")}/api/resume/file/${publicReportId}`;
       console.log("[RESUME] Persistent file URL:", finalResumeUrl);
     }
 
@@ -433,10 +487,11 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
       resumeUrl: finalResumeUrl,
       analysis: aiReport,
       rewrites: savedReport.rewrites,
-      reportId: savedReport._id,
+      reportId: publicReportId,
       createdAt: savedReport.createdAt,
       resumeName,
       warning: aiWarning,
+      persisted,
     });
   } catch (err) {
     console.error("❌ Resume analysis failed:", err);
@@ -468,30 +523,46 @@ export const aiSuggestionAnalyzeResume = async (req, res) => {
 export const getResumeReports = async (req, res) => {
   try {
     const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
+    const { ownerFilter } = await import("../middlewares/auth.middleware.js");
+    const filter = ownerFilter(req);
+
+    if (!filter) {
+      return res.status(200).json({ reports: [] });
+    }
+
     let reports = [];
     if (isDbConnected()) {
       try {
-        reports = await ResumeReport.find({ user: req.user._id }).sort({ createdAt: -1 });
+        reports = await ResumeReport.find(filter).sort({ createdAt: -1 });
       } catch (e) {
-        reports = Array.from(inMemoryReports.values());
+        console.warn("[HISTORY] DB query failed, falling back to memory:", e.message);
       }
-    } else {
-      reports = Array.from(inMemoryReports.values());
+    }
+
+    // Fallback to memory if DB is down or empty for this session
+    if (!reports || reports.length === 0) {
+      const allMem = Array.from(inMemoryReports.values());
+      reports = allMem
+        .filter((r) => {
+          if (filter.user) return r.user && String(r.user) === String(filter.user);
+          if (filter.guestId) return r.guestId && r.guestId === filter.guestId;
+          return false;
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     const parsedReports = reports.map((report) => ({
       resumeUrl: report.fileUrl,
-      resumeName: report.resumeName || "Resume.pdf", // ✅ Include name
+      resumeName: report.resumeName || "Resume.pdf",
       analysis:
         typeof report.aiFeedback === "string"
           ? JSON.parse(report.aiFeedback)
           : report.aiFeedback,
-      reportId: report._id.toString(),
+      reportId: report.reportId || report._id?.toString(),
       createdAt: report.createdAt,
     }));
 
     return res.status(200).json({ reports: parsedReports });
-
   } catch (err) {
     return res.status(500).json({
       error: "Failed to fetch resume reports: " + err.message,
@@ -499,17 +570,33 @@ export const getResumeReports = async (req, res) => {
   }
 };
 
-
-
 // ✅ Delete Report - DELETE /resume/:reportId
 export const deleteResumeReport = async (req, res) => {
   const { reportId } = req.params;
 
   try {
-    const deleted = await ResumeReport.findOneAndDelete({
-      _id: reportId,
-      user: req.user._id,
-    });
+    const { ownerFilter } = await import("../middlewares/auth.middleware.js");
+    const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
+    const filter = ownerFilter(req);
+
+    let deleted = null;
+    if (isDbConnected()) {
+      const isHex = mongoose.Types.ObjectId.isValid(reportId) && String(new mongoose.Types.ObjectId(reportId)) === String(reportId);
+      const query = isHex ? { _id: reportId, ...(filter || {}) } : { reportId: String(reportId), ...(filter || {}) };
+      deleted = await ResumeReport.findOneAndDelete(query);
+    }
+
+    if (!deleted && inMemoryReports.has(String(reportId))) {
+      const mem = inMemoryReports.get(String(reportId));
+      const isOwner = filter && (
+        (filter.user && mem.user && String(mem.user) === String(filter.user)) ||
+        (filter.guestId && mem.guestId && mem.guestId === filter.guestId)
+      );
+      if (isOwner) {
+        inMemoryReports.delete(String(reportId));
+        deleted = mem;
+      }
+    }
 
     if (!deleted) {
       return res.status(404).json({ error: "Report not found or unauthorized" });
@@ -523,14 +610,14 @@ export const deleteResumeReport = async (req, res) => {
   }
 };
 
-
 // ✅ Reanalyze Existing Resume - PUT /resume/reanalyze/:reportId
 export const reanalyzeResume = async (req, res) => {
   const { reportId } = req.params;
   let tmpFile;
 
   try {
-    const report = await ResumeReport.findOne({ _id: reportId, user: req.user._id });
+    const { ownerFilter } = await import("../middlewares/auth.middleware.js");
+    const report = await findReportById(reportId, ownerFilter(req));
     if (!report) {
       return res.status(404).json({ error: "Report not found" });
     }
@@ -572,14 +659,16 @@ export const reanalyzeResume = async (req, res) => {
     report.aiFeedback = JSON.stringify(aiReport);
     report.score = aiReport.ats_score || 0;
     report.createdAt = new Date();
-    await report.save();
+    if (typeof report.save === "function") {
+      await report.save();
+    }
 
     return res.status(200).json({
       message: "Resume re-analyzed successfully",
       resumeUrl: report.fileUrl,
-      resumeName: report.resumeName || "Resume.pdf", // ✅ Return name
+      resumeName: report.resumeName || "Resume.pdf",
       analysis: aiReport,
-      reportId: report._id,
+      reportId: report.reportId || report._id?.toString(),
       createdAt: report.createdAt,
     });
   } catch (err) {
@@ -624,21 +713,8 @@ export const getResumeReportById = async (req, res) => {
   const { reportId } = req.params;
 
   try {
-    const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
-    let report = null;
-
-    if (isDbConnected()) {
-      try {
-        report = await ResumeReport.findOne({
-          _id: reportId,
-          user: req.user._id,
-        });
-      } catch (e) {
-        report = inMemoryReports.get(reportId);
-      }
-    } else {
-      report = inMemoryReports.get(reportId);
-    }
+    const { ownerFilter } = await import("../middlewares/auth.middleware.js");
+    const report = await findReportById(reportId, ownerFilter(req));
 
     if (!report) {
       return res.status(404).json({ error: "Report not found or unauthorized" });
@@ -653,7 +729,7 @@ export const getResumeReportById = async (req, res) => {
           : report.aiFeedback,
       score: report.score,
       createdAt: report.createdAt,
-      reportId: report._id,
+      reportId: report.reportId || report._id?.toString(),
     });
   } catch (err) {
     return res.status(500).json({
@@ -684,7 +760,8 @@ export const downloadResumeReportPdf = async (req, res) => {
   const { reportId } = req.params;
 
   try {
-    const report = await ResumeReport.findOne({ _id: reportId, user: req.user._id });
+    const { ownerFilter } = await import("../middlewares/auth.middleware.js");
+    const report = await findReportById(reportId, ownerFilter(req));
     if (!report) return res.status(404).json({ error: "Report not found" });
 
     const feedback =
@@ -779,12 +856,15 @@ export const rewriteAISuggestion = async (req, res) => {
   try {
     const rewritten = await rewriteAISuggestionWithOpenRouter(text);
 
-    const report = await ResumeReport.findOne({ _id: reportId, user: req.user._id });
+    const { ownerFilter } = await import("../middlewares/auth.middleware.js");
+    const report = await findReportById(reportId, ownerFilter(req));
     if (!report) return res.status(404).json({ error: "Report not found" });
 
     report.rewrites = report.rewrites || [];
     report.rewrites.push({ original: text, rewritten });
-    await report.save();
+    if (typeof report.save === "function") {
+      await report.save();
+    }
 
     return res.status(200).json({ rewritten });
   } catch (err) {
@@ -911,20 +991,15 @@ export const deleteReport = async (req, res) => {
 
 
 // ✅ GET /api/resume/file/:reportId
-// Serves the base64-stored PDF from MongoDB (persistent on Render — no ephemeral FS needed)
+// Serves the base64-stored PDF from MongoDB or in-memory fallback (Render persistent fix)
 export const serveResumeFile = async (req, res) => {
   try {
     const { reportId } = req.params;
-    const { isDbConnected, inMemoryReports } = await import("../utils/memoryStore.js");
-
-    let report = null;
-    if (isDbConnected()) {
-      report = await ResumeReport.findById(reportId).select("fileData fileMimeType resumeName fileUrl");
-    }
-    if (!report) {
-      report = inMemoryReports.get(reportId);
+    if (!reportId) {
+      return res.status(404).json({ error: "Report not found" });
     }
 
+    const report = await findReportById(reportId);
     if (!report) {
       return res.status(404).json({ error: "Report not found" });
     }
@@ -937,7 +1012,7 @@ export const serveResumeFile = async (req, res) => {
         "Content-Type": report.fileMimeType || "application/pdf",
         "Content-Disposition": `inline; filename="${filename}"`,
         "Content-Length": buffer.length,
-        "Cache-Control": "public, max-age=86400",
+        "Cache-Control": "private, max-age=3600",
       });
       return res.send(buffer);
     }
@@ -950,7 +1025,7 @@ export const serveResumeFile = async (req, res) => {
     return res.status(404).json({ error: "No PDF data available for this report" });
   } catch (err) {
     console.error("[SERVE-FILE] Error:", err.message);
-    return res.status(500).json({ error: "Failed to serve file: " + err.message });
+    return res.status(404).json({ error: "Report not found" });
   }
 };
 

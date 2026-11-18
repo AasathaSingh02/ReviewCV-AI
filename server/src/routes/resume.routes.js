@@ -29,7 +29,7 @@ resumeRouter.post("/ai-suggestion", userAuth, upload.single("resume"), aiSuggest
 resumeRouter.get("/history", userAuth, getResumeReports);
 
 
-// ✅ GET /api/resume/file/:reportId — Serve stored base64 PDF (Render persistent fix)
+// ✅ GET /api/resume/file/:reportId — Serve stored base64 PDF (capability URL for previews)
 resumeRouter.get("/file/:reportId", serveResumeFile);
 
 
